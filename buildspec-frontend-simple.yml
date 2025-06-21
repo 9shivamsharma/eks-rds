@@ -39,4 +39,4 @@ artifacts:
     - frontend-image-uri.txt
     - frontend-deployment.yaml
     - frontend-service.yaml
-  base-directory: '.' 
+  base-directory: '.'
