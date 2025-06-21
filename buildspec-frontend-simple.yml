@@ -18,8 +18,14 @@ phases:
       - npm run build
       - echo Building the Docker image...
       - REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/frontend
-      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - echo "=== DEBUG: Available CodeBuild Environment Variables ==="
+      - echo "CODEBUILD_RESOLVED_SOURCE_VERSION:" $CODEBUILD_RESOLVED_SOURCE_VERSION
+      - echo "CODEBUILD_SOURCE_VERSION:" $CODEBUILD_SOURCE_VERSION
+      - echo "CODEBUILD_WEBHOOK_HEAD_REF:" $CODEBUILD_WEBHOOK_HEAD_REF
+      - echo "============================="
+      - COMMIT_HASH=$(echo $CODEBUILD_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=commit-$COMMIT_HASH
+      - echo "Using commit hash:" $COMMIT_HASH
       - echo "Using image tag:" $IMAGE_TAG
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
