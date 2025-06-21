@@ -28,6 +28,36 @@ phases:
     commands:
       - echo Deployment started on `date`
       - echo Updating Kubernetes deployment files with new image URIs...
+      
+      # Read the new image URIs from artifact files
+      - |
+        if [ -f backend-image-uri.txt ]; then
+          BACKEND_IMAGE_URI=$(cat backend-image-uri.txt)
+          echo "Backend Image URI: $BACKEND_IMAGE_URI"
+          # Update backend-deployment.yaml with new image URI
+          sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/backend:.*|image: $BACKEND_IMAGE_URI|g" backend-deployment.yaml
+          echo "Updated backend deployment with new image"
+        else
+          echo "Warning: backend-image-uri.txt not found, using existing image"
+        fi
+      
+      - |
+        if [ -f frontend-image-uri.txt ]; then
+          FRONTEND_IMAGE_URI=$(cat frontend-image-uri.txt)
+          echo "Frontend Image URI: $FRONTEND_IMAGE_URI"
+          # Update frontend-deployment.yaml with new image URI
+          sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/frontend:.*|image: $FRONTEND_IMAGE_URI|g" frontend-deployment.yaml
+          echo "Updated frontend deployment with new image"
+        else
+          echo "Warning: frontend-image-uri.txt not found, using existing image"
+        fi
+      
+      # Display the updated deployment files for verification
+      - echo "=== Updated Backend Deployment ==="
+      - grep -A 2 -B 2 "image:" backend-deployment.yaml
+      - echo "=== Updated Frontend Deployment ==="
+      - grep -A 2 -B 2 "image:" frontend-deployment.yaml
+      
       - echo "Applying Kubernetes configurations..."
       - kubectl apply -f backend-deployment.yaml
       - kubectl apply -f backend-service.yaml
