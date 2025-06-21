@@ -1,0 +1,117 @@
+{
+  "pipeline": {
+    "name": "hobby-app-pipeline",
+    "roleArn": "arn:aws:iam::381492221394:role/service-role/AWSCodePipelineServiceRole-ap-south-1-3-tier",
+    "artifactStore": {
+      "type": "S3",
+      "location": "codepipeline-ap-south-1-f04b56ee72a0-438c-aa63-d7008869525d"
+    },
+    "stages": [
+      {
+        "name": "Source",
+        "actions": [
+          {
+            "name": "SourceAction",
+            "actionTypeId": {
+              "category": "Source",
+              "owner": "ThirdParty",
+              "provider": "GitHub",
+              "version": "1"
+            },
+            "configuration": {
+              "Owner": "9shivamsharma",
+              "Repo": "eks-rds",
+              "Branch": "main",
+              "OAuthToken": "{{resolve:secretsmanager:github-token:SecretString:token}}"
+            },
+            "outputArtifacts": [
+              {
+                "name": "SourceOutput"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Build",
+        "actions": [
+          {
+            "name": "BuildBackend",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "configuration": {
+              "ProjectName": "hobby-app-backend-build"
+            },
+            "inputArtifacts": [
+              {
+                "name": "SourceOutput"
+              }
+            ],
+            "outputArtifacts": [
+              {
+                "name": "BackendBuildOutput"
+              }
+            ],
+            "runOrder": 1
+          },
+          {
+            "name": "BuildFrontend",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "configuration": {
+              "ProjectName": "hobby-app-frontend-build"
+            },
+            "inputArtifacts": [
+              {
+                "name": "SourceOutput"
+              }
+            ],
+            "outputArtifacts": [
+              {
+                "name": "FrontendBuildOutput"
+              }
+            ],
+            "runOrder": 1
+          }
+        ]
+      },
+      {
+        "name": "Deploy",
+        "actions": [
+          {
+            "name": "DeployToEKS",
+            "actionTypeId": {
+              "category": "Build",
+              "owner": "AWS",
+              "provider": "CodeBuild",
+              "version": "1"
+            },
+            "configuration": {
+              "ProjectName": "hobby-app-deploy"
+            },
+            "inputArtifacts": [
+              {
+                "name": "SourceOutput"
+              },
+              {
+                "name": "BackendBuildOutput"
+              },
+              {
+                "name": "FrontendBuildOutput"
+              }
+            ],
+            "runOrder": 1
+          }
+        ]
+      }
+    ]
+  }
+} 
