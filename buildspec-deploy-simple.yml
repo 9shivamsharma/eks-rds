@@ -1,0 +1,50 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.9
+    commands:
+      - echo Installing kubectl...
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/
+      - kubectl version --client
+  pre_build:
+    commands:
+      - echo Configuring kubectl for EKS cluster...
+      - echo "Debugging AWS caller identity"
+      - aws sts get-caller-identity
+      - echo "Debugging List EKS clusters"
+      - aws eks list-clusters --region ap-south-1
+      - echo "Attempting to update kubeconfig"
+      - aws eks update-kubeconfig --region ap-south-1 --name app-cluster-new
+      - kubectl config current-context
+      - echo Reading image URIs from build artifacts...
+      - ls -la
+      - cat backend-image-uri.txt || echo "backend-image-uri.txt not found"
+      - cat frontend-image-uri.txt || echo "frontend-image-uri.txt not found"
+  build:
+    commands:
+      - echo Deployment started on `date`
+      - echo Updating Kubernetes deployment files with new image URIs...
+      - echo "Applying Kubernetes configurations..."
+      - kubectl apply -f backend-deployment.yaml
+      - kubectl apply -f backend-service.yaml
+      - kubectl apply -f frontend-deployment.yaml
+      - kubectl apply -f frontend-service.yaml
+      - echo "Waiting for deployments to complete..."
+      - kubectl rollout status deployment/backend --timeout=300s
+      - kubectl rollout status deployment/frontend --timeout=300s
+  post_build:
+    commands:
+      - echo Deployment completed on `date`
+      - echo Verifying deployment status...
+      - kubectl get pods
+      - kubectl get services
+      - echo Deployment verification completed
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: '.' 
