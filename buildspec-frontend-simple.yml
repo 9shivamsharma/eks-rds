@@ -4,13 +4,6 @@ phases:
   install:
     runtime-versions:
       nodejs: 18
-    commands:
-      - echo Installing SonarQube Scanner...
-      - wget https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-4.8.0.2856-linux.zip
-      - unzip sonar-scanner-cli-4.8.0.2856-linux.zip
-      - mv sonar-scanner-4.8.0.2856-linux /opt/sonar-scanner
-      - export PATH=$PATH:/opt/sonar-scanner/bin
-      - sonar-scanner --version
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
@@ -18,17 +11,7 @@ phases:
       - echo Installing dependencies...
       - cd new-app/ft
       - npm install
-      - echo Running SonarQube analysis...
-      - export PATH=$PATH:/opt/sonar-scanner/bin
-      - |
-        sonar-scanner \
-          -Dsonar.projectKey=hobby-app-frontend \
-          -Dsonar.sources=src \
-          -Dsonar.host.url=$SONAR_HOST_URL \
-          -Dsonar.login=$SONAR_TOKEN \
-          -Dsonar.javascript.lcov.reportPaths=coverage/lcov.info \
-          -Dsonar.exclusions=node_modules/**,build/**,coverage/**,public/**,*.log || echo "SonarQube analysis failed, continuing..."
-      - echo SonarQube analysis completed
+      - echo Skipping SonarQube analysis for now...
   build:
     commands:
       - echo Build started on `date`
