@@ -18,7 +18,7 @@ phases:
       - echo Building React application...
       - npm run build
       - echo Building the Docker image...
-      - REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/hobby-app-frontend
+      - REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/frontend
       - IMAGE_TAG=build-$(echo $CODEBUILD_BUILD_ID | awk -F":" '{print $2}')
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
