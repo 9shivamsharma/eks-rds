@@ -32,12 +32,12 @@ phases:
       - echo Updating Kubernetes deployment files with new image URIs...
       - |
         if [ ! -z "$BACKEND_IMAGE_URI" ]; then
-          sed -i "s|image:.*hobby-app-backend.*|image: $BACKEND_IMAGE_URI|g" backend-deployment.yaml
+          sed -i "s|image:.*backend.*|image: $BACKEND_IMAGE_URI|g" backend-deployment.yaml
           echo "Updated backend deployment with image: $BACKEND_IMAGE_URI"
         fi
       - |
         if [ ! -z "$FRONTEND_IMAGE_URI" ]; then
-          sed -i "s|image:.*hobby-app-frontend.*|image: $FRONTEND_IMAGE_URI|g" frontend-deployment.yaml
+          sed -i "s|image:.*frontend.*|image: $FRONTEND_IMAGE_URI|g" frontend-deployment.yaml
           echo "Updated frontend deployment with image: $FRONTEND_IMAGE_URI"
         fi
       - echo Applying Kubernetes configurations...
