@@ -22,43 +22,44 @@ phases:
       - kubectl config current-context
       - echo Reading image URIs from build artifacts...
       - ls -la
-      - cat backend-image-uri.txt || echo "backend-image-uri.txt not found"
-      - cat frontend-image-uri.txt || echo "frontend-image-uri.txt not found"
+      - echo "=== Artifact Contents ==="
+      - cat backend-image-uri.txt 2>/dev/null || echo "backend-image-uri.txt not found"
+      - cat frontend-image-uri.txt 2>/dev/null || echo "frontend-image-uri.txt not found"
+      - echo "=========================="
   build:
     commands:
       - echo Deployment started on `date`
-      - echo Updating Kubernetes deployment files with new image URIs...
+      - echo Updating Kubernetes deployment files with new commit-based image URIs...
       
-      # Read the new image URIs from artifact files
+      # Update backend deployment
       - |
         if [ -f backend-image-uri.txt ]; then
           BACKEND_IMAGE_URI=$(cat backend-image-uri.txt)
-          echo "Backend Image URI: $BACKEND_IMAGE_URI"
-          # Update backend-deployment.yaml with new image URI
+          echo "✅ Backend Image URI: $BACKEND_IMAGE_URI"
           sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/backend:.*|image: $BACKEND_IMAGE_URI|g" backend-deployment.yaml
-          echo "Updated backend deployment with new image"
+          echo "✅ Updated backend deployment with commit-based image"
         else
-          echo "Warning: backend-image-uri.txt not found, using existing image"
+          echo "⚠️  Warning: backend-image-uri.txt not found, using existing image"
         fi
       
+      # Update frontend deployment  
       - |
         if [ -f frontend-image-uri.txt ]; then
           FRONTEND_IMAGE_URI=$(cat frontend-image-uri.txt)
-          echo "Frontend Image URI: $FRONTEND_IMAGE_URI"
-          # Update frontend-deployment.yaml with new image URI
+          echo "✅ Frontend Image URI: $FRONTEND_IMAGE_URI"
           sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/frontend:.*|image: $FRONTEND_IMAGE_URI|g" frontend-deployment.yaml
-          echo "Updated frontend deployment with new image"
+          echo "✅ Updated frontend deployment with commit-based image"
         else
-          echo "Warning: frontend-image-uri.txt not found, using existing image"
+          echo "⚠️  Warning: frontend-image-uri.txt not found, using existing image"
         fi
       
       # Display the updated deployment files for verification
       - echo "=== Updated Backend Deployment ==="
-      - grep -A 2 -B 2 "image:" backend-deployment.yaml
+      - grep -A 2 -B 2 "image:" backend-deployment.yaml || echo "Could not find image line in backend deployment"
       - echo "=== Updated Frontend Deployment ==="
-      - grep -A 2 -B 2 "image:" frontend-deployment.yaml
+      - grep -A 2 -B 2 "image:" frontend-deployment.yaml || echo "Could not find image line in frontend deployment"
       
-      - echo "Applying Kubernetes configurations..."
+      - echo "🚀 Applying Kubernetes configurations..."
       - kubectl apply -f backend-deployment.yaml
       - kubectl apply -f backend-service.yaml
       - kubectl apply -f frontend-deployment.yaml
