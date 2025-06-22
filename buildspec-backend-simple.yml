@@ -15,9 +15,10 @@ phases:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/backend
-      - COMMIT_HASH=$(echo $CODEBUILD_SOURCE_VERSION | cut -c 1-7)
-      - IMAGE_TAG=commit-$COMMIT_HASH
+      - cd new-app/bk
+      - export REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/backend
+      - export COMMIT_HASH=$(echo $CODEBUILD_SOURCE_VERSION | cut -c 1-7)
+      - export IMAGE_TAG=commit-$COMMIT_HASH
       - echo "Using image tag:" $IMAGE_TAG
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
