@@ -1,0 +1,14 @@
+version: 0.2
+
+phases:
+  build:
+    commands:
+      - mkdir -p manifests
+      - cp BuildArtifact/new-app/ft/frontend-deployment.yaml manifests/
+      - cp BuildArtifact/new-app/ft/frontend-service.yaml manifests/
+      - cp bk_artifact/new-app/bk/backend-deployment.yaml manifests/
+      - cp bk_artifact/new-app/bk/backend-service.yaml manifests/
+
+artifacts:
+  files:
+    - manifests/* 
