@@ -21,17 +21,14 @@ phases:
       - cp FrontendBuildOutput/frontend-service.yaml .
       - cp BackendBuildOutput/backend-deployment.yaml .
       - cp BackendBuildOutput/backend-service.yaml .
-      - echo "📥 Reading image URIs..."
-      - 'FRONTEND_IMAGE=$(cat frontend-image-uri.txt)'
-      - 'BACKEND_IMAGE=$(cat backend-image-uri.txt)'
-      - echo "✅ Frontend Image: $FRONTEND_IMAGE"
-      - echo "✅ Backend Image: $BACKEND_IMAGE"
+      - echo "✅ Frontend Image: $(cat frontend-image-uri.txt)"
+      - echo "✅ Backend Image: $(cat backend-image-uri.txt)"
 
   build:
     commands:
       - echo "✏️ Updating deployment manifests..."
-      - 'sed -i "s|image: .*frontend:.*|image: $FRONTEND_IMAGE|g" frontend-deployment.yaml'
-      - 'sed -i "s|image: .*backend:.*|image: $BACKEND_IMAGE|g" backend-deployment.yaml'
+      - 'sed -i "s|image: .*frontend:.*|image: $(cat frontend-image-uri.txt)|g" frontend-deployment.yaml'
+      - 'sed -i "s|image: .*backend:.*|image: $(cat backend-image-uri.txt)|g" backend-deployment.yaml'
       - echo "🚀 Applying frontend resources..."
       - kubectl apply -f frontend-deployment.yaml
       - kubectl apply -f frontend-service.yaml
