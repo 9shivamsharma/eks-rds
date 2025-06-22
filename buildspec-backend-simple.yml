@@ -4,38 +4,44 @@ phases:
   install:
     runtime-versions:
       nodejs: 18
+
   pre_build:
     commands:
       - echo Logging in to Amazon ECR...
       - aws ecr get-login-password --region ap-south-1 | docker login --username AWS --password-stdin 381492221394.dkr.ecr.ap-south-1.amazonaws.com
+
+      - echo Setting environment variables...
+      - REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/backend
+      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=commit-$COMMIT_HASH
+      - echo "Using image tag: $IMAGE_TAG"
+
       - echo Installing dependencies...
       - cd new-app/bk
       - npm install
+
   build:
     commands:
       - echo Build started on `date`
       - echo Building the Docker image...
-      - cd new-app/bk
-      - export REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/backend
-      - export COMMIT_HASH=$(echo $CODEBUILD_SOURCE_VERSION | cut -c 1-7)
-      - export IMAGE_TAG=commit-$COMMIT_HASH
-      - echo "Using image tag:" $IMAGE_TAG
       - docker build -t $REPOSITORY_URI:latest .
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
+
   post_build:
     commands:
       - echo Build completed on `date`
-      - echo Pushing the Docker images...
+      - echo Pushing Docker images...
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - echo Writing image definitions file...
+
+      - echo Writing image URI to file...
       - cd ../..
       - echo $REPOSITORY_URI:$IMAGE_TAG > backend-image-uri.txt
-      - echo "Created backend-image-uri.txt with:" $REPOSITORY_URI:$IMAGE_TAG
+      - echo "Created backend-image-uri.txt with image: $REPOSITORY_URI:$IMAGE_TAG"
 
 artifacts:
   files:
     - backend-image-uri.txt
-    - backend-deployment.yaml
-    - backend-service.yaml
+    - new-app/bk/backend-deployment.yaml
+    - new-app/bk/backend-service.yaml
   base-directory: '.'

@@ -10,36 +10,35 @@ phases:
       - chmod +x kubectl
       - mv kubectl /usr/local/bin/
       - kubectl version --client
+
   pre_build:
     commands:
       - echo Configuring kubectl for EKS cluster...
-      - echo "Debugging AWS caller identity"
       - aws sts get-caller-identity
-      - echo "Debugging List EKS clusters"
       - aws eks list-clusters --region ap-south-1
-      - echo "Attempting to update kubeconfig"
       - aws eks update-kubeconfig --region ap-south-1 --name app-cluster-new
       - kubectl config current-context
+
       - echo Reading image URIs from build artifacts...
       - ls -la
       - echo "=== Artifact Contents ==="
-      - cat backend-image-uri.txt 2>/dev/null || echo "backend-image-uri.txt not found"
-      - cat frontend-image-uri.txt 2>/dev/null || echo "frontend-image-uri.txt not found"
+      - cat backend-image-uri.txt 2>/dev/null || echo "❌ backend-image-uri.txt not found"
+      - cat frontend-image-uri.txt 2>/dev/null || echo "❌ frontend-image-uri.txt not found"
       - echo "=========================="
+
   build:
     commands:
-      - "echo Deployment started on `date`"
-      - echo Updating Kubernetes deployment files with new commit-based image URIs...
+      - echo "🚀 Deployment started on `date`"
       
       # Update backend deployment
       - |
         if [ -f backend-image-uri.txt ]; then
           BACKEND_IMAGE_URI=$(cat backend-image-uri.txt)
           echo "✅ Backend Image URI: $BACKEND_IMAGE_URI"
-          sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/backend:.*|image: $BACKEND_IMAGE_URI|g" backend-deployment.yaml
+          sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/backend:.*|image: $BACKEND_IMAGE_URI|g" new-app/bk/backend-deployment.yaml
           echo "✅ Updated backend deployment with commit-based image"
         else
-          echo "⚠️  Warning: backend-image-uri.txt not found, using existing image"
+          echo "⚠️  backend-image-uri.txt not found — skipping backend update"
         fi
       
       # Update frontend deployment  
@@ -47,35 +46,36 @@ phases:
         if [ -f frontend-image-uri.txt ]; then
           FRONTEND_IMAGE_URI=$(cat frontend-image-uri.txt)
           echo "✅ Frontend Image URI: $FRONTEND_IMAGE_URI"
-          sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/frontend:.*|image: $FRONTEND_IMAGE_URI|g" frontend-deployment.yaml
+          sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/frontend:.*|image: $FRONTEND_IMAGE_URI|g" new-app/ft/frontend-deployment.yaml
           echo "✅ Updated frontend deployment with commit-based image"
         else
-          echo "⚠️  Warning: frontend-image-uri.txt not found, using existing image"
+          echo "⚠️  frontend-image-uri.txt not found — skipping frontend update"
         fi
       
-      # Display the updated deployment files for verification
       - echo "=== Updated Backend Deployment ==="
-      - grep -A 2 -B 2 "image:" backend-deployment.yaml || echo "Could not find image line in backend deployment"
+      - grep -A 2 -B 2 "image:" new-app/bk/backend-deployment.yaml || echo "Could not find image line"
       - echo "=== Updated Frontend Deployment ==="
-      - grep -A 2 -B 2 "image:" frontend-deployment.yaml || echo "Could not find image line in frontend deployment"
+      - grep -A 2 -B 2 "image:" new-app/ft/frontend-deployment.yaml || echo "Could not find image line"
       
       - echo "🚀 Applying Kubernetes configurations..."
-      - kubectl apply -f backend-deployment.yaml
-      - kubectl apply -f backend-service.yaml
-      - kubectl apply -f frontend-deployment.yaml
-      - kubectl apply -f frontend-service.yaml
-      - echo "Waiting for deployments to complete..."
+      - kubectl apply -f new-app/bk/backend-deployment.yaml
+      - kubectl apply -f new-app/bk/backend-service.yaml
+      - kubectl apply -f new-app/ft/frontend-deployment.yaml
+      - kubectl apply -f new-app/ft/frontend-service.yaml
+
+      - echo "⏳ Waiting for deployments to complete..."
       - kubectl rollout status deployment/backend --timeout=300s
       - kubectl rollout status deployment/frontend --timeout=300s
+
   post_build:
     commands:
-      - "echo Deployment completed on `date`"
+      - echo "✅ Deployment completed on `date`"
       - echo Verifying deployment status...
       - kubectl get pods
       - kubectl get services
-      - echo Deployment verification completed
+      - echo "✅ Deployment verification completed"
 
 artifacts:
   files:
     - '**/*'
-  base-directory: '.' 
+  base-directory: '.'
