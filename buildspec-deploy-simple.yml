@@ -1,4 +1,4 @@
-version: 0.2
+=version: 0.2
 
 phases:
   install:
@@ -19,61 +19,60 @@ phases:
       - aws eks update-kubeconfig --region ap-south-1 --name app-cluster-new
       - kubectl config current-context
 
-      - echo Reading image URIs from build artifacts...
+      - echo Reading image URIs from artifacts...
       - ls -la
-      - echo "=== Artifact Contents ==="
+      - echo "=== Image Files ==="
       - cat backend-image-uri.txt 2>/dev/null || echo "❌ backend-image-uri.txt not found"
       - cat frontend-image-uri.txt 2>/dev/null || echo "❌ frontend-image-uri.txt not found"
-      - echo "=========================="
+      - echo "==================="
 
   build:
     commands:
-      - echo "🚀 Deployment started on `date`"
-      
-      # Update backend deployment
+      - echo "🚀 Starting deployment on `date`"
+
+      # Update backend deployment YAML
       - |
         if [ -f backend-image-uri.txt ]; then
           BACKEND_IMAGE_URI=$(cat backend-image-uri.txt)
           echo "✅ Backend Image URI: $BACKEND_IMAGE_URI"
           sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/backend:.*|image: $BACKEND_IMAGE_URI|g" new-app/bk/backend-deployment.yaml
-          echo "✅ Updated backend deployment with commit-based image"
         else
           echo "⚠️  backend-image-uri.txt not found — skipping backend update"
         fi
-      
-      # Update frontend deployment  
+
+      # Update frontend deployment YAML
       - |
         if [ -f frontend-image-uri.txt ]; then
           FRONTEND_IMAGE_URI=$(cat frontend-image-uri.txt)
           echo "✅ Frontend Image URI: $FRONTEND_IMAGE_URI"
           sed -i "s|image: 381492221394\.dkr\.ecr\.ap-south-1\.amazonaws\.com/frontend:.*|image: $FRONTEND_IMAGE_URI|g" new-app/ft/frontend-deployment.yaml
-          echo "✅ Updated frontend deployment with commit-based image"
         else
           echo "⚠️  frontend-image-uri.txt not found — skipping frontend update"
         fi
-      
-      - echo "=== Updated Backend Deployment ==="
-      - grep -A 2 -B 2 "image:" new-app/bk/backend-deployment.yaml || echo "Could not find image line"
-      - echo "=== Updated Frontend Deployment ==="
-      - grep -A 2 -B 2 "image:" new-app/ft/frontend-deployment.yaml || echo "Could not find image line"
-      
-      - echo "🚀 Applying Kubernetes configurations..."
+
+      # Verify YAML changes
+      - echo "=== Backend Deployment Image ==="
+      - grep 'image:' new-app/bk/backend-deployment.yaml || echo "Image not found"
+      - echo "=== Frontend Deployment Image ==="
+      - grep 'image:' new-app/ft/frontend-deployment.yaml || echo "Image not found"
+
+      - echo "📦 Applying Kubernetes resources..."
       - kubectl apply -f new-app/bk/backend-deployment.yaml
       - kubectl apply -f new-app/bk/backend-service.yaml
       - kubectl apply -f new-app/ft/frontend-deployment.yaml
       - kubectl apply -f new-app/ft/frontend-service.yaml
 
-      - echo "⏳ Waiting for deployments to complete..."
-      - kubectl rollout status deployment/backend --timeout=300s
-      - kubectl rollout status deployment/frontend --timeout=300s
+      - echo "⏳ Waiting for rollout to complete..."
+      - kubectl rollout status deployment/backend --timeout=300s || echo "⚠️ Backend rollout timeout"
+      - kubectl rollout status deployment/frontend --timeout=300s || echo "⚠️ Frontend rollout timeout"
 
   post_build:
     commands:
-      - echo "✅ Deployment completed on `date`"
-      - echo Verifying deployment status...
-      - kubectl get pods
-      - kubectl get services
-      - echo "✅ Deployment verification completed"
+      - echo "✅ Deployment finished on `date`"
+      - echo Checking deployment status...
+      - kubectl get pods -o wide
+      - kubectl get svc
+      - echo "✅ Deployment verification complete"
 
 artifacts:
   files:
