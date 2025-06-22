@@ -4,6 +4,8 @@ phases:
   install:
     runtime-versions:
       python: 3.9
+
+  pre_build:
     commands:
       - echo Installing kubectl...
       - curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
@@ -11,8 +13,6 @@ phases:
       - mv kubectl /usr/local/bin/
       - kubectl version --client
 
-  pre_build:
-    commands:
       - echo Configuring kubectl for EKS...
       - aws sts get-caller-identity
       - aws eks update-kubeconfig --region ap-south-1 --name app-cluster-new
