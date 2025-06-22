@@ -28,7 +28,7 @@ phases:
       - echo "=========================="
   build:
     commands:
-      - echo Deployment started on `date`
+      - "echo Deployment started on `date`"
       - echo Updating Kubernetes deployment files with new commit-based image URIs...
       
       # Update backend deployment
@@ -69,7 +69,7 @@ phases:
       - kubectl rollout status deployment/frontend --timeout=300s
   post_build:
     commands:
-      - echo Deployment completed on `date`
+      - "echo Deployment completed on `date`"
       - echo Verifying deployment status...
       - kubectl get pods
       - kubectl get services
