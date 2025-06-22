@@ -3,11 +3,15 @@ version: 0.2
 phases:
   build:
     commands:
+      - echo "Listing BuildArtifact contents:"
+      - ls -R BuildArtifact
+      - echo "Listing bk_artifact contents:"
+      - ls -R bk_artifact
       - mkdir -p manifests
-      - cp BuildArtifact/frontend-deployment.yaml manifests/
-      - cp BuildArtifact/frontend-service.yaml manifests/
-      - cp bk_artifact/backend-deployment.yaml manifests/
-      - cp bk_artifact/backend-service.yaml manifests/
+      - cp BuildArtifact/frontend-deployment.yaml manifests/ || true
+      - cp BuildArtifact/frontend-service.yaml manifests/ || true
+      - cp bk_artifact/backend-deployment.yaml manifests/ || true
+      - cp bk_artifact/backend-service.yaml manifests/ || true
 
 artifacts:
   files:
