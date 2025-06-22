@@ -13,33 +13,26 @@ phases:
       - npm install
   build:
     commands:
-      - "echo Build started on `date`"
+      - echo Build started on `date`
       - echo Building React application...
-      - cd new-app/ft
       - npm run build
       - echo Building the Docker image...
-      - "export REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/frontend"
-      - echo "=== DEBUG: Available CodeBuild Environment Variables ==="
-      - "echo \"CODEBUILD_RESOLVED_SOURCE_VERSION:\" $CODEBUILD_RESOLVED_SOURCE_VERSION"
-      - "echo \"CODEBUILD_SOURCE_VERSION:\" $CODEBUILD_SOURCE_VERSION"
-      - "echo \"CODEBUILD_WEBHOOK_HEAD_REF:\" $CODEBUILD_WEBHOOK_HEAD_REF"
-      - echo "============================="
-      - "export COMMIT_HASH=$(echo $CODEBUILD_SOURCE_VERSION | cut -c 1-7)"
-      - "export IMAGE_TAG=commit-$COMMIT_HASH"
-      - "echo \"Using commit hash:\" $COMMIT_HASH"
-      - "echo \"Using image tag:\" $IMAGE_TAG"
-      - "docker build -t $REPOSITORY_URI:latest ."
-      - "docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG"
+      - REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/frontend
+      - COMMIT_HASH=$(echo $CODEBUILD_SOURCE_VERSION | cut -c 1-7)
+      - IMAGE_TAG=commit-$COMMIT_HASH
+      - echo "Using image tag:" $IMAGE_TAG
+      - docker build -t $REPOSITORY_URI:latest .
+      - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
   post_build:
     commands:
-      - "echo Build completed on `date`"
+      - echo Build completed on `date`
       - echo Pushing the Docker images...
-      - "docker push $REPOSITORY_URI:latest"
-      - "docker push $REPOSITORY_URI:$IMAGE_TAG"
+      - docker push $REPOSITORY_URI:latest
+      - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
       - cd ../..
-      - "echo $REPOSITORY_URI:$IMAGE_TAG > frontend-image-uri.txt"
-      - "echo \"Created frontend-image-uri.txt with:\" $REPOSITORY_URI:$IMAGE_TAG"
+      - echo $REPOSITORY_URI:$IMAGE_TAG > frontend-image-uri.txt
+      - echo "Created frontend-image-uri.txt with:" $REPOSITORY_URI:$IMAGE_TAG
 
 artifacts:
   files:
