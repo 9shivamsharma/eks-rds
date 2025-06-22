@@ -7,10 +7,7 @@ phases:
 
   pre_build:
     commands:
-      - 'echo "🔧 Installing kubectl..."'
-      - 'curl -s -o kubectl "https://dl.k8s.io/release/v1.29.0/bin/linux/amd64/kubectl"'
-      - 'chmod +x kubectl'
-      - 'mv kubectl /usr/local/bin/'
+      - 'echo "🔧 Checking kubectl version..."'
       - 'kubectl version --client'
       - 'echo "🔐 Authenticating with EKS..."'
       - 'aws eks update-kubeconfig --region us-east-1 --name eks-cluster-new'
