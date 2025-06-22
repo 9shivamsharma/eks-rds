@@ -7,50 +7,50 @@ phases:
 
   pre_build:
     commands:
-      - echo Installing kubectl...
-      - |
-        curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - echo "🔧 Installing kubectl..."
+      - curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - chmod +x kubectl
       - mv kubectl /usr/local/bin/
       - kubectl version --client
-      - echo Configuring kubectl for EKS...
-      - aws sts get-caller-identity
+
+      - echo "🔐 Authenticating with EKS..."
       - aws eks update-kubeconfig --region ap-south-1 --name app-cluster-new
-      - kubectl config current-context
-      - echo Reading image URIs...
-      - FRONTEND_IMAGE=$(cat frontend-image-uri.txt) && echo "✅ Frontend image: $FRONTEND_IMAGE"
-      - BACKEND_IMAGE=$(cat backend-image-uri.txt) && echo "✅ Backend image: $BACKEND_IMAGE"
-      - echo Exporting images to env...
-      - echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> image-vars.env
-      - echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> image-vars.env
-      - source image-vars.env
+
+      - echo "📦 Copying image URIs from input artifacts..."
+      - cp FrontendBuildOutput/frontend-image-uri.txt .
+      - cp BackendBuildOutput/backend-image-uri.txt .
+
+      - cp FrontendBuildOutput/frontend-deployment.yaml .
+      - cp FrontendBuildOutput/frontend-service.yaml .
+      - cp BackendBuildOutput/backend-deployment.yaml .
+      - cp BackendBuildOutput/backend-service.yaml .
+
+      - echo "📥 Reading image URIs..."
+      - FRONTEND_IMAGE=$(cat frontend-image-uri.txt)
+      - BACKEND_IMAGE=$(cat backend-image-uri.txt)
+      - echo "✅ Frontend Image: $FRONTEND_IMAGE"
+      - echo "✅ Backend Image: $BACKEND_IMAGE"
 
   build:
     commands:
-      - echo "🔧 Updating deployment manifests..."
-      - |
-        sed -i "s|image: .*frontend:.*|image: $FRONTEND_IMAGE|g" \
-        new-app/ft/frontend-deployment.yaml
-      - |
-        sed -i "s|image: .*backend:.*|image: $BACKEND_IMAGE|g" \
-        new-app/bk/backend-deployment.yaml
-      - echo "🚀 Applying Kubernetes manifests..."
-      - kubectl apply -f new-app/ft/frontend-deployment.yaml
-      - kubectl apply -f new-app/ft/frontend-service.yaml
-      - kubectl apply -f new-app/bk/backend-deployment.yaml
-      - kubectl apply -f new-app/bk/backend-service.yaml
-      - echo "⏳ Waiting for deployments to roll out..."
-      - kubectl rollout status deployment/frontend --timeout=300s
-      - kubectl rollout status deployment/backend --timeout=300s
+      - echo "✏️ Updating deployment manifests..."
+      - sed -i "s|image: .*frontend:.*|image: $FRONTEND_IMAGE|g" frontend-deployment.yaml
+      - sed -i "s|image: .*backend:.*|image: $BACKEND_IMAGE|g" backend-deployment.yaml
+
+      - echo "🚀 Applying frontend resources..."
+      - kubectl apply -f frontend-deployment.yaml
+      - kubectl apply -f frontend-service.yaml
+
+      - echo "🚀 Applying backend resources..."
+      - kubectl apply -f backend-deployment.yaml
+      - kubectl apply -f backend-service.yaml
+
+      - echo "⏳ Waiting for rollouts..."
+      - kubectl rollout status deployment/frontend --timeout=180s
+      - kubectl rollout status deployment/backend --timeout=180s
 
   post_build:
     commands:
-      - echo "✅ Deployment completed at $(date)"
+      - echo "✅ Deployment finished at $(date)"
       - kubectl get pods -o wide
       - kubectl get svc
-      - echo "✅ Deployment verification done"
-
-artifacts:
-  files:
-    - '**/*'
-  base-directory: '.' 

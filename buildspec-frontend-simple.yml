@@ -15,7 +15,7 @@ phases:
 
       - echo Setting environment variables...
       - cd ../..
-      - REPOSITORY_URI=381492221394.dkr.ecr.ap-south-1.amazonaws.com/frontend
+      - REPOSITORY_URI=605134461257.dkr.ecr.us-east-1.amazonaws.com/frontend
       - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
       - IMAGE_TAG=commit-$COMMIT_HASH
       - echo $REPOSITORY_URI:$IMAGE_TAG > frontend-image-uri.txt
