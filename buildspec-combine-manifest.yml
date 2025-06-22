@@ -4,10 +4,10 @@ phases:
   build:
     commands:
       - mkdir -p manifests
-      - cp BuildArtifact/new-app/ft/frontend-deployment.yaml manifests/
-      - cp BuildArtifact/new-app/ft/frontend-service.yaml manifests/
-      - cp bk_artifact/new-app/bk/backend-deployment.yaml manifests/
-      - cp bk_artifact/new-app/bk/backend-service.yaml manifests/
+      - cp BuildArtifact/frontend-deployment.yaml manifests/
+      - cp BuildArtifact/frontend-service.yaml manifests/
+      - cp bk_artifact/backend-deployment.yaml manifests/
+      - cp bk_artifact/backend-service.yaml manifests/
 
 artifacts:
   files:
