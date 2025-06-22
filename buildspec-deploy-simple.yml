@@ -19,19 +19,16 @@ phases:
       - kubectl config current-context
 
       - echo Reading image URIs...
-      - |
-        if [ -f frontend-image-uri.txt ]; then FRONTEND_IMAGE=$(cat frontend-image-uri.txt); echo "✅ Frontend image: $FRONTEND_IMAGE"; else echo "❌ frontend-image-uri.txt not found"; exit 1; fi
-      - |
-        if [ -f backend-image-uri.txt ]; then BACKEND_IMAGE=$(cat backend-image-uri.txt); echo "✅ Backend image: $BACKEND_IMAGE"; else echo "❌ backend-image-uri.txt not found"; exit 1; fi
-
-      - echo Exporting image vars for build phase...
-      - echo "export FRONTEND_IMAGE=$FRONTEND_IMAGE" >> ~/.bashrc
-      - echo "export BACKEND_IMAGE=$BACKEND_IMAGE" >> ~/.bashrc
-      - source ~/.bashrc
+      - FRONTEND_IMAGE=$(cat frontend-image-uri.txt) && echo "✅ Frontend image: $FRONTEND_IMAGE"
+      - BACKEND_IMAGE=$(cat backend-image-uri.txt) && echo "✅ Backend image: $BACKEND_IMAGE"
+      - echo Exporting images to env...
+      - echo "FRONTEND_IMAGE=$FRONTEND_IMAGE" >> image-vars.env
+      - echo "BACKEND_IMAGE=$BACKEND_IMAGE" >> image-vars.env
+      - source image-vars.env
 
   build:
     commands:
-      - echo "🔧 Updating deployment YAMLs with image URIs..."
+      - echo "🔧 Updating deployment manifests..."
       - sed -i "s|image: .*frontend:.*|image: $FRONTEND_IMAGE|g" new-app/ft/frontend-deployment.yaml
       - sed -i "s|image: .*backend:.*|image: $BACKEND_IMAGE|g" new-app/bk/backend-deployment.yaml
 
@@ -41,16 +38,16 @@ phases:
       - kubectl apply -f new-app/bk/backend-deployment.yaml
       - kubectl apply -f new-app/bk/backend-service.yaml
 
-      - echo "⏳ Waiting for rollouts to finish..."
-      - kubectl rollout status deployment/frontend --timeout=300s || echo "⚠️ Frontend rollout warning"
-      - kubectl rollout status deployment/backend --timeout=300s || echo "⚠️ Backend rollout warning"
+      - echo "⏳ Waiting for deployments to roll out..."
+      - kubectl rollout status deployment/frontend --timeout=300s
+      - kubectl rollout status deployment/backend --timeout=300s
 
   post_build:
     commands:
-      - echo "✅ Deployment completed at `date`"
+      - echo "✅ Deployment completed at $(date)"
       - kubectl get pods -o wide
       - kubectl get svc
-      - echo "✅ Verification done"
+      - echo "✅ Deployment verification done"
 
 artifacts:
   files:
