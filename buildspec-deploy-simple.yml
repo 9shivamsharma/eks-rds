@@ -4,47 +4,56 @@ phases:
   install:
     runtime-versions:
       python: 3.9
+    commands:
+      - echo Installing kubectl...
+      - curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl
+      - mv kubectl /usr/local/bin/
+      - kubectl version --client
 
   pre_build:
     commands:
-      - echo "Installing kubectl..."
-      - curl -LO "https://dl.k8s.io/release/v1.28.0/bin/linux/amd64/kubectl"
-      - chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
-      - kubectl version --client
-      - echo "Authenticating with EKS..."
+      - echo Configuring kubectl for EKS cluster...
+      - echo "Debugging AWS caller identity"
       - aws sts get-caller-identity
+      - echo "Debugging List EKS clusters"
+      - aws eks list-clusters --region us-east-1
+      - echo "Attempting to update kubeconfig"
       - aws eks update-kubeconfig --region us-east-1 --name eks-cluster-new
-      - echo "Testing cluster access..."
-      - kubectl cluster-info || echo "Cluster info failed, but continuing..."
-      - kubectl get nodes || echo "Cannot get nodes, but continuing..."
-      - echo "Setting up image URIs with latest tags..."
+      - kubectl config current-context
+      - echo "Setting up latest image URIs..."
       - |
-        # Set image URIs with latest tags
-        FRONTEND_IMAGE="123456789012.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
-        BACKEND_IMAGE="123456789012.dkr.ecr.us-east-1.amazonaws.com/backend:latest"
+        # Set latest image URIs for fresh deployments
+        FRONTEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
+        BACKEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/backend:latest"
         echo "Frontend Image: $FRONTEND_IMAGE"
         echo "Backend Image: $BACKEND_IMAGE"
 
   build:
     commands:
-      - echo "Deploying frontend and backend with latest images..."
-      - echo "Checking cluster connectivity..."
-      - kubectl get nodes || echo "Warning: Cannot get nodes, but attempting deployment..."
+      - echo Deployment started on `date`
+      - echo "Deploying with latest images and forcing fresh pulls..."
       - echo "Updating frontend deployment..."
-      - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default || echo "Frontend update failed, but continuing..."
+      - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default
       - echo "Updating backend deployment..."
-      - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default || echo "Backend update failed, but continuing..."
+      - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default
       - echo "Forcing fresh image pulls by deleting pods..."
       - kubectl delete pods -l app=frontend -n default --force --grace-period=0 || echo "No frontend pods to delete"
       - kubectl delete pods -l app=backend -n default --force --grace-period=0 || echo "No backend pods to delete"
-      - echo "Waiting for rollouts to complete..."
-      - kubectl rollout status deployment/frontend -n default --timeout=300s || echo "Frontend rollout status failed"
-      - kubectl rollout status deployment/backend -n default --timeout=300s || echo "Backend rollout status failed"
+      - echo "Waiting for deployments to complete..."
+      - kubectl rollout status deployment/backend -n default --timeout=300s
+      - kubectl rollout status deployment/frontend -n default --timeout=300s
 
   post_build:
     commands:
-      - echo "Deployment completed successfully at" $(date)
-      - echo "Current deployment status:"
-      - kubectl get deployments -n default || echo "Cannot get deployments"
-      - kubectl get pods -n default -o wide || echo "Cannot get pods"
-      - kubectl get services -n default || echo "Cannot get services"
+      - echo Deployment completed on `date`
+      - echo Verifying deployment status...
+      - kubectl get pods -n default
+      - kubectl get services -n default
+      - kubectl get deployments -n default
+      - echo Deployment verification completed
+
+artifacts:
+  files:
+    - '**/*'
+  base-directory: '.'
