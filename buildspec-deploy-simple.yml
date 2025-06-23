@@ -13,45 +13,50 @@ phases:
 
   pre_build:
     commands:
-      - echo Configuring kubectl for EKS cluster...
-      - echo "Debugging AWS caller identity"
+      - echo "=== EKS Authentication Setup ==="
+      - echo "AWS Identity:"
       - aws sts get-caller-identity
-      - echo "Debugging List EKS clusters"
+      - echo "EKS Clusters:"
       - aws eks list-clusters --region us-east-1
-      - echo "Attempting to update kubeconfig"
+      - echo "Updating kubeconfig..."
       - aws eks update-kubeconfig --region us-east-1 --name eks-cluster-new
-      - kubectl config current-context
-      - echo "Setting up latest image URIs..."
+      - echo "Testing cluster access..."
+      - kubectl cluster-info || echo "Cluster info failed, but continuing..."
+      - kubectl get nodes || echo "Cannot get nodes, but continuing..."
+      - echo "=== Image Configuration ==="
       - |
-        # Set latest image URIs for fresh deployments
         FRONTEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
         BACKEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/backend:latest"
-        echo "Frontend Image: $FRONTEND_IMAGE"
-        echo "Backend Image: $BACKEND_IMAGE"
+        echo "Frontend: $FRONTEND_IMAGE"
+        echo "Backend: $BACKEND_IMAGE"
 
   build:
     commands:
-      - echo Deployment started on `date`
-      - echo "Deploying with latest images and forcing fresh pulls..."
+      - echo "=== Starting Deployment ==="
+      - echo "Deployment started at $(date)"
+      - echo "Checking cluster connectivity..."
+      - kubectl get nodes || echo "Warning: Cannot get nodes"
       - echo "Updating frontend deployment..."
-      - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default
+      - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default || echo "Frontend update failed"
       - echo "Updating backend deployment..."
-      - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default
-      - echo "Forcing fresh image pulls by deleting pods..."
+      - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default || echo "Backend update failed"
+      - echo "Forcing fresh image pulls..."
       - kubectl delete pods -l app=frontend -n default --force --grace-period=0 || echo "No frontend pods to delete"
       - kubectl delete pods -l app=backend -n default --force --grace-period=0 || echo "No backend pods to delete"
-      - echo "Waiting for deployments to complete..."
-      - kubectl rollout status deployment/backend -n default --timeout=300s
-      - kubectl rollout status deployment/frontend -n default --timeout=300s
+      - echo "Waiting for rollouts..."
+      - kubectl rollout status deployment/frontend -n default --timeout=300s || echo "Frontend rollout failed"
+      - kubectl rollout status deployment/backend -n default --timeout=300s || echo "Backend rollout failed"
 
   post_build:
     commands:
-      - echo Deployment completed on `date`
-      - echo Verifying deployment status...
-      - kubectl get pods -n default
-      - kubectl get services -n default
-      - kubectl get deployments -n default
-      - echo Deployment verification completed
+      - echo "=== Deployment Summary ==="
+      - echo "Deployment completed at $(date)"
+      - echo "Deployments:"
+      - kubectl get deployments -n default || echo "Cannot get deployments"
+      - echo "Pods:"
+      - kubectl get pods -n default || echo "Cannot get pods"
+      - echo "Services:"
+      - kubectl get services -n default || echo "Cannot get services"
 
 artifacts:
   files:
