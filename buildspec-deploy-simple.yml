@@ -21,9 +21,27 @@ phases:
       - echo "Searching for all possible artifact directories:"
       - find . -type d -name "*artifact*" -o -name "*Artifact*" || echo "No artifact directories found"
       - echo "Searching for frontend image URI file:"
-      - find . -name "frontend-image-uri.txt" -type f -exec echo "Found: {}" \; -exec cat {} \;
+      - |
+        FRONTEND_FILES=$(find . -name "frontend-image-uri.txt" -type f)
+        if [ -n "$FRONTEND_FILES" ]; then
+          echo "Found frontend image URI files:"
+          echo "$FRONTEND_FILES"
+          echo "Content of first file:"
+          head -1 $(echo "$FRONTEND_FILES" | head -1)
+        else
+          echo "No frontend image URI files found"
+        fi
       - echo "Searching for backend image URI file:"
-      - find . -name "backend-image-uri.txt" -type f -exec echo "Found: {}" \; -exec cat {} \;
+      - |
+        BACKEND_FILES=$(find . -name "backend-image-uri.txt" -type f)
+        if [ -n "$BACKEND_FILES" ]; then
+          echo "Found backend image URI files:"
+          echo "$BACKEND_FILES"
+          echo "Content of first file:"
+          head -1 $(echo "$BACKEND_FILES" | head -1)
+        else
+          echo "No backend image URI files found"
+        fi
       - echo "Extracting image URIs..."
       - |
         FRONTEND_FILE=$(find . -name "frontend-image-uri.txt" -type f | head -1)
