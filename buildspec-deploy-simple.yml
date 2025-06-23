@@ -14,15 +14,41 @@ phases:
       - echo "Authenticating with EKS..."
       - aws eks update-kubeconfig --region us-east-1 --name eks-cluster-new
       - echo "Getting image URIs from build artifacts..."
-      - echo "Listing available artifacts:"
-      - ls -la || true
-      - ls -la BuildArtifact || echo "BuildArtifact not found"
-      - ls -la bk-artifact || echo "bk-artifact not found"
+      - echo "Current directory:"
+      - pwd
+      - echo "Listing current directory contents:"
+      - ls -la
+      - echo "Listing BuildArtifact directory (if exists):"
+      - ls -la BuildArtifact || echo "BuildArtifact directory not found"
+      - echo "Listing bk-artifact directory (if exists):"
+      - ls -la bk-artifact || echo "bk-artifact directory not found"
+      - echo "Checking for frontend image URI file:"
+      - find . -name "frontend-image-uri.txt" -type f || echo "frontend-image-uri.txt not found anywhere"
+      - echo "Checking for backend image URI file:"
+      - find . -name "backend-image-uri.txt" -type f || echo "backend-image-uri.txt not found anywhere"
       - echo "Extracting image URIs..."
-      - FRONTEND_IMAGE=$(cat BuildArtifact/frontend-image-uri.txt) || (echo "frontend-image-uri.txt not found!" && exit 1)
-      - BACKEND_IMAGE=$(cat bk-artifact/backend-image-uri.txt) || (echo "backend-image-uri.txt not found!" && exit 1)
-      - echo "Frontend Image:" $FRONTEND_IMAGE
-      - echo "Backend Image:" $BACKEND_IMAGE
+      - |
+        if [ -f "BuildArtifact/frontend-image-uri.txt" ]; then
+          FRONTEND_IMAGE=$(cat BuildArtifact/frontend-image-uri.txt)
+          echo "Frontend Image found:" $FRONTEND_IMAGE
+        elif [ -f "frontend-image-uri.txt" ]; then
+          FRONTEND_IMAGE=$(cat frontend-image-uri.txt)
+          echo "Frontend Image found in root:" $FRONTEND_IMAGE
+        else
+          echo "ERROR: frontend-image-uri.txt not found in any location!"
+          exit 1
+        fi
+      - |
+        if [ -f "bk-artifact/backend-image-uri.txt" ]; then
+          BACKEND_IMAGE=$(cat bk-artifact/backend-image-uri.txt)
+          echo "Backend Image found:" $BACKEND_IMAGE
+        elif [ -f "backend-image-uri.txt" ]; then
+          BACKEND_IMAGE=$(cat backend-image-uri.txt)
+          echo "Backend Image found in root:" $BACKEND_IMAGE
+        else
+          echo "ERROR: backend-image-uri.txt not found in any location!"
+          exit 1
+        fi
 
   build:
     commands:
