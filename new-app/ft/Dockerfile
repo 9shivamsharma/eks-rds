@@ -1,5 +1,5 @@
 # Stage 1: Build React app
-FROM node:18 AS builder
+FROM public.ecr.aws/docker/library/node:18 AS builder
 
 WORKDIR /app
 
@@ -12,7 +12,7 @@ COPY . .
 RUN npm run build
 
 # Stage 2: Serve using Nginx
-FROM nginx:alpine
+FROM public.ecr.aws/docker/library/nginx:alpine
 
 # Remove default config
 RUN rm -rf /etc/nginx/conf.d/default.conf
