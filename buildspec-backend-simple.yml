@@ -38,6 +38,4 @@ phases:
 artifacts:
   files:
     - backend-image-uri.txt
-    - backend-deployment.yaml
-    - backend-service.yaml
   base-directory: '.'

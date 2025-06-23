@@ -7,56 +7,45 @@ phases:
 
   pre_build:
     commands:
-      - echo "🔧 Checking kubectl version..."
+      - echo "🔧 Installing kubectl..."
+      - curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+      - chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
       - kubectl version --client
+      
       - echo "🔐 Authenticating with EKS..."
       - aws eks update-kubeconfig --region us-east-1 --name eks-cluster-new
       
-      - echo "📦 Copying image URIs from input artifacts..."
+      - echo "📦 Getting image URIs from build artifacts..."
       - echo "🔍 Listing available artifacts:"
       - ls -la || true
       - ls -la BuildArtifact || echo "BuildArtifact not found"
       - ls -la bk-artifact || echo "bk-artifact not found"
       
-      - echo "📋 Copying frontend artifacts..."
-      - cp BuildArtifact/frontend-image-uri.txt . || (echo "❌ frontend-image-uri.txt not found!" && exit 1)
-      - cp BuildArtifact/frontend-deployment.yaml . || (echo "❌ frontend-deployment.yaml not found!" && exit 1)
-      - cp BuildArtifact/frontend-service.yaml . || (echo "❌ frontend-service.yaml not found!" && exit 1)
+      - echo "📋 Extracting image URIs..."
+      - FRONTEND_IMAGE=$(cat BuildArtifact/frontend-image-uri.txt) || (echo "❌ frontend-image-uri.txt not found!" && exit 1)
+      - BACKEND_IMAGE=$(cat bk-artifact/backend-image-uri.txt) || (echo "❌ backend-image-uri.txt not found!" && exit 1)
       
-      - echo "📋 Copying backend artifacts..."
-      - cp bk-artifact/backend-image-uri.txt . || (echo "❌ backend-image-uri.txt not found!" && exit 1)
-      - cp bk-artifact/backend-deployment.yaml . || (echo "❌ backend-deployment.yaml not found!" && exit 1)
-      - cp bk-artifact/backend-service.yaml . || (echo "❌ backend-service.yaml not found!" && exit 1)
-      
-      - echo "✅ Frontend Image: $(cat frontend-image-uri.txt)"
-      - echo "✅ Backend Image: $(cat backend-image-uri.txt)"
+      - echo "✅ Frontend Image: $FRONTEND_IMAGE"
+      - echo "✅ Backend Image: $BACKEND_IMAGE"
 
   build:
     commands:
-      - echo "✏️ Updating deployment manifests..."
-      - sed -i "s|image: .*frontend:.*|image: $(cat frontend-image-uri.txt)|g" frontend-deployment.yaml
-      - sed -i "s|image: .*backend:.*|image: $(cat backend-image-uri.txt)|g" backend-deployment.yaml
+      - echo "🚀 Deploying frontend and backend with new images..."
       
-      - echo "🔍 Checking updated manifests..."
-      - echo "Frontend deployment image:"
-      - grep "image:" frontend-deployment.yaml
-      - echo "Backend deployment image:"
-      - grep "image:" backend-deployment.yaml
+      - echo "📱 Updating frontend deployment..."
+      - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default
       
-      - echo "🚀 Applying frontend resources..."
-      - kubectl apply -f frontend-deployment.yaml
-      - kubectl apply -f frontend-service.yaml
+      - echo "⚙️ Updating backend deployment..."
+      - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default
       
-      - echo "🚀 Applying backend resources..."
-      - kubectl apply -f backend-deployment.yaml
-      - kubectl apply -f backend-service.yaml
-      
-      - echo "⏳ Waiting for rollouts..."
-      - kubectl rollout status deployment/frontend --timeout=180s
-      - kubectl rollout status deployment/backend --timeout=180s
+      - echo "⏳ Waiting for rollouts to complete..."
+      - kubectl rollout status deployment/frontend -n default --timeout=300s
+      - kubectl rollout status deployment/backend -n default --timeout=300s
 
   post_build:
     commands:
-      - echo "✅ Deployment finished at $(date)"
-      - kubectl get pods -o wide
-      - kubectl get svc
+      - echo "✅ Deployment completed successfully at $(date)"
+      - echo "📊 Current deployment status:"
+      - kubectl get deployments -n default
+      - kubectl get pods -n default -o wide
+      - kubectl get services -n default
