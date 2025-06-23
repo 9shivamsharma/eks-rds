@@ -13,92 +13,24 @@ phases:
       - kubectl version --client
       - echo "Authenticating with EKS..."
       - aws eks update-kubeconfig --region us-east-1 --name eks-cluster-new
-      - echo "Getting image URIs from build artifacts..."
-      - echo "Current directory:"
-      - pwd
-      - echo "Listing current directory contents:"
-      - ls -la
-      - echo "CodeBuild artifact directories:"
-      - echo "CODEBUILD_SRC_DIR: $CODEBUILD_SRC_DIR"
-      - echo "CODEBUILD_SRC_DIR_bk_artifact: $CODEBUILD_SRC_DIR_bk_artifact"
-      - echo "CODEBUILD_SRC_DIR_BuildArtifact: $CODEBUILD_SRC_DIR_BuildArtifact"
-      - echo "Searching for all possible artifact directories:"
-      - find . -type d -name "*artifact*" -o -name "*Artifact*" || echo "No artifact directories found"
-      - echo "Searching for frontend image URI file:"
+      - echo "Setting up image URIs with latest tags..."
       - |
-        FRONTEND_FILES=$(find . -name "frontend-image-uri.txt" -type f)
-        if [ -n "$FRONTEND_FILES" ]; then
-          echo "Found frontend image URI files:"
-          echo "$FRONTEND_FILES"
-          echo "Content of first file:"
-          head -1 $(echo "$FRONTEND_FILES" | head -1)
-        else
-          echo "No frontend image URI files found"
-        fi
-      - echo "Searching for backend image URI file:"
-      - |
-        BACKEND_FILES=$(find . -name "backend-image-uri.txt" -type f)
-        if [ -n "$BACKEND_FILES" ]; then
-          echo "Found backend image URI files:"
-          echo "$BACKEND_FILES"
-          echo "Content of first file:"
-          head -1 $(echo "$BACKEND_FILES" | head -1)
-        else
-          echo "No backend image URI files found"
-        fi
-      - echo "Extracting image URIs..."
-      - |
-        # Try to find frontend image URI in various locations
-        FRONTEND_FILE=""
-        if [ -n "$CODEBUILD_SRC_DIR_BuildArtifact" ] && [ -f "$CODEBUILD_SRC_DIR_BuildArtifact/frontend-image-uri.txt" ]; then
-          FRONTEND_FILE="$CODEBUILD_SRC_DIR_BuildArtifact/frontend-image-uri.txt"
-        elif [ -f "BuildArtifact/frontend-image-uri.txt" ]; then
-          FRONTEND_FILE="BuildArtifact/frontend-image-uri.txt"
-        else
-          FRONTEND_FILE=$(find . -name "frontend-image-uri.txt" -type f | head -1)
-        fi
-        
-        if [ -n "$FRONTEND_FILE" ] && [ -f "$FRONTEND_FILE" ]; then
-          FRONTEND_IMAGE=$(cat "$FRONTEND_FILE")
-          echo "Frontend Image found in $FRONTEND_FILE:" $FRONTEND_IMAGE
-        else
-          echo "ERROR: frontend-image-uri.txt not found anywhere!"
-          echo "Available files:"
-          find . -name "*.txt" -type f
-          echo "Available directories:"
-          ls -la
-          exit 1
-        fi
-      - |
-        # Try to find backend image URI in various locations
-        BACKEND_FILE=""
-        if [ -n "$CODEBUILD_SRC_DIR_bk_artifact" ] && [ -f "$CODEBUILD_SRC_DIR_bk_artifact/backend-image-uri.txt" ]; then
-          BACKEND_FILE="$CODEBUILD_SRC_DIR_bk_artifact/backend-image-uri.txt"
-        elif [ -f "bk-artifact/backend-image-uri.txt" ]; then
-          BACKEND_FILE="bk-artifact/backend-image-uri.txt"
-        else
-          BACKEND_FILE=$(find . -name "backend-image-uri.txt" -type f | head -1)
-        fi
-        
-        if [ -n "$BACKEND_FILE" ] && [ -f "$BACKEND_FILE" ]; then
-          BACKEND_IMAGE=$(cat "$BACKEND_FILE")
-          echo "Backend Image found in $BACKEND_FILE:" $BACKEND_IMAGE
-        else
-          echo "ERROR: backend-image-uri.txt not found anywhere!"
-          echo "Available files:"
-          find . -name "*.txt" -type f
-          echo "Available directories:"
-          ls -la
-          exit 1
-        fi
+        # Set image URIs with latest tags
+        FRONTEND_IMAGE="123456789012.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
+        BACKEND_IMAGE="123456789012.dkr.ecr.us-east-1.amazonaws.com/backend:latest"
+        echo "Frontend Image: $FRONTEND_IMAGE"
+        echo "Backend Image: $BACKEND_IMAGE"
 
   build:
     commands:
-      - echo "Deploying frontend and backend with new images..."
+      - echo "Deploying frontend and backend with latest images..."
       - echo "Updating frontend deployment..."
       - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default
       - echo "Updating backend deployment..."
       - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default
+      - echo "Forcing fresh image pulls by deleting pods..."
+      - kubectl delete pods -l app=frontend -n default --force --grace-period=0 || echo "No frontend pods to delete"
+      - kubectl delete pods -l app=backend -n default --force --grace-period=0 || echo "No backend pods to delete"
       - echo "Waiting for rollouts to complete..."
       - kubectl rollout status deployment/frontend -n default --timeout=300s
       - kubectl rollout status deployment/backend -n default --timeout=300s
