@@ -7,45 +7,38 @@ phases:
 
   pre_build:
     commands:
-      - echo "🔧 Installing kubectl..."
+      - echo "Installing kubectl..."
       - curl -LO "https://dl.k8s.io/release/$(curl -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
       - chmod +x kubectl && mv kubectl /usr/local/bin/kubectl
       - kubectl version --client
-      
-      - echo "🔐 Authenticating with EKS..."
+      - echo "Authenticating with EKS..."
       - aws eks update-kubeconfig --region us-east-1 --name eks-cluster-new
-      
-      - echo "📦 Getting image URIs from build artifacts..."
-      - echo "🔍 Listing available artifacts:"
+      - echo "Getting image URIs from build artifacts..."
+      - echo "Listing available artifacts:"
       - ls -la || true
       - ls -la BuildArtifact || echo "BuildArtifact not found"
       - ls -la bk-artifact || echo "bk-artifact not found"
-      
-      - echo "📋 Extracting image URIs..."
-      - FRONTEND_IMAGE=$(cat BuildArtifact/frontend-image-uri.txt) || (echo "❌ frontend-image-uri.txt not found!" && exit 1)
-      - BACKEND_IMAGE=$(cat bk-artifact/backend-image-uri.txt) || (echo "❌ backend-image-uri.txt not found!" && exit 1)
-      
-      - echo "✅ Frontend Image: $FRONTEND_IMAGE"
-      - echo "✅ Backend Image: $BACKEND_IMAGE"
+      - echo "Extracting image URIs..."
+      - FRONTEND_IMAGE=$(cat BuildArtifact/frontend-image-uri.txt) || (echo "frontend-image-uri.txt not found!" && exit 1)
+      - BACKEND_IMAGE=$(cat bk-artifact/backend-image-uri.txt) || (echo "backend-image-uri.txt not found!" && exit 1)
+      - echo "Frontend Image:" $FRONTEND_IMAGE
+      - echo "Backend Image:" $BACKEND_IMAGE
 
   build:
     commands:
-      - echo "🚀 Deploying frontend and backend with new images..."
-      
-      - echo "📱 Updating frontend deployment..."
+      - echo "Deploying frontend and backend with new images..."
+      - echo "Updating frontend deployment..."
       - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default
-      
-      - echo "⚙️ Updating backend deployment..."
+      - echo "Updating backend deployment..."
       - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default
-      
-      - echo "⏳ Waiting for rollouts to complete..."
+      - echo "Waiting for rollouts to complete..."
       - kubectl rollout status deployment/frontend -n default --timeout=300s
       - kubectl rollout status deployment/backend -n default --timeout=300s
 
   post_build:
     commands:
-      - echo "✅ Deployment completed successfully at $(date)"
-      - echo "📊 Current deployment status:"
+      - echo "Deployment completed successfully at" $(date)
+      - echo "Current deployment status:"
       - kubectl get deployments -n default
       - kubectl get pods -n default -o wide
       - kubectl get services -n default
