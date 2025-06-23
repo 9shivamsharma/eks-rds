@@ -42,6 +42,6 @@ phases:
 artifacts:
   files:
     - frontend-image-uri.txt
-    - new-app/ft/frontend-deployment.yaml
-    - new-app/ft/frontend-service.yaml
+    - frontend-deployment.yaml
+    - frontend-service.yaml
   base-directory: '.'
