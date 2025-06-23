@@ -18,6 +18,10 @@ phases:
       - pwd
       - echo "Listing current directory contents:"
       - ls -la
+      - echo "CodeBuild artifact directories:"
+      - echo "CODEBUILD_SRC_DIR: $CODEBUILD_SRC_DIR"
+      - echo "CODEBUILD_SRC_DIR_bk_artifact: $CODEBUILD_SRC_DIR_bk_artifact"
+      - echo "CODEBUILD_SRC_DIR_BuildArtifact: $CODEBUILD_SRC_DIR_BuildArtifact"
       - echo "Searching for all possible artifact directories:"
       - find . -type d -name "*artifact*" -o -name "*Artifact*" || echo "No artifact directories found"
       - echo "Searching for frontend image URI file:"
@@ -44,25 +48,47 @@ phases:
         fi
       - echo "Extracting image URIs..."
       - |
-        FRONTEND_FILE=$(find . -name "frontend-image-uri.txt" -type f | head -1)
-        if [ -n "$FRONTEND_FILE" ]; then
+        # Try to find frontend image URI in various locations
+        FRONTEND_FILE=""
+        if [ -n "$CODEBUILD_SRC_DIR_BuildArtifact" ] && [ -f "$CODEBUILD_SRC_DIR_BuildArtifact/frontend-image-uri.txt" ]; then
+          FRONTEND_FILE="$CODEBUILD_SRC_DIR_BuildArtifact/frontend-image-uri.txt"
+        elif [ -f "BuildArtifact/frontend-image-uri.txt" ]; then
+          FRONTEND_FILE="BuildArtifact/frontend-image-uri.txt"
+        else
+          FRONTEND_FILE=$(find . -name "frontend-image-uri.txt" -type f | head -1)
+        fi
+        
+        if [ -n "$FRONTEND_FILE" ] && [ -f "$FRONTEND_FILE" ]; then
           FRONTEND_IMAGE=$(cat "$FRONTEND_FILE")
           echo "Frontend Image found in $FRONTEND_FILE:" $FRONTEND_IMAGE
         else
           echo "ERROR: frontend-image-uri.txt not found anywhere!"
           echo "Available files:"
           find . -name "*.txt" -type f
+          echo "Available directories:"
+          ls -la
           exit 1
         fi
       - |
-        BACKEND_FILE=$(find . -name "backend-image-uri.txt" -type f | head -1)
-        if [ -n "$BACKEND_FILE" ]; then
+        # Try to find backend image URI in various locations
+        BACKEND_FILE=""
+        if [ -n "$CODEBUILD_SRC_DIR_bk_artifact" ] && [ -f "$CODEBUILD_SRC_DIR_bk_artifact/backend-image-uri.txt" ]; then
+          BACKEND_FILE="$CODEBUILD_SRC_DIR_bk_artifact/backend-image-uri.txt"
+        elif [ -f "bk-artifact/backend-image-uri.txt" ]; then
+          BACKEND_FILE="bk-artifact/backend-image-uri.txt"
+        else
+          BACKEND_FILE=$(find . -name "backend-image-uri.txt" -type f | head -1)
+        fi
+        
+        if [ -n "$BACKEND_FILE" ] && [ -f "$BACKEND_FILE" ]; then
           BACKEND_IMAGE=$(cat "$BACKEND_FILE")
           echo "Backend Image found in $BACKEND_FILE:" $BACKEND_IMAGE
         else
           echo "ERROR: backend-image-uri.txt not found anywhere!"
           echo "Available files:"
           find . -name "*.txt" -type f
+          echo "Available directories:"
+          ls -la
           exit 1
         fi
 
