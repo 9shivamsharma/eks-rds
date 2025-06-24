@@ -122,7 +122,7 @@
                         "runOrder": 1,
                         "configuration": {
                             "PrimarySource": "SourceArtifact",
-                            "ProjectName": "deploy"
+                            "ProjectName": "deployment"
                         },
                         "outputArtifacts": [],
                         "inputArtifacts": [
