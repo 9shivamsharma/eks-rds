@@ -24,11 +24,10 @@ phases:
       - kubectl cluster-info || echo "Cluster info failed, but continuing..."
       - kubectl get nodes || echo "Cannot get nodes, but continuing..."
       - echo "=== Image Configuration ==="
-      - |
-        FRONTEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
-        BACKEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/backend:latest"
-        echo "Frontend: $FRONTEND_IMAGE"
-        echo "Backend: $BACKEND_IMAGE"
+      - FRONTEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
+      - BACKEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/backend:latest"
+      - echo "Frontend: $FRONTEND_IMAGE"
+      - echo "Backend: $BACKEND_IMAGE"
 
   build:
     commands:
