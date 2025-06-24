@@ -23,28 +23,28 @@ phases:
       - echo "Testing cluster access..."
       - kubectl cluster-info || echo "Cluster info failed, but continuing..."
       - kubectl get nodes || echo "Cannot get nodes, but continuing..."
-      - echo "=== Image Configuration ==="
-      - FRONTEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/frontend:latest"
-      - BACKEND_IMAGE="605134461257.dkr.ecr.us-east-1.amazonaws.com/backend:latest"
-      - echo "Frontend: $FRONTEND_IMAGE"
-      - echo "Backend: $BACKEND_IMAGE"
 
   build:
     commands:
-      - echo "=== Starting Simple Deployment ==="
-      - echo "Deployment started at $(date)"
-      - echo "Checking cluster connectivity..."
-      - kubectl get nodes || echo "Warning: Cannot get nodes"
-      - echo "Updating frontend deployment..."
-      - kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default || echo "Frontend update failed"
-      - echo "Updating backend deployment..."
-      - kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default || echo "Backend update failed"
-      - echo "Forcing fresh image pulls..."
-      - kubectl delete pods -l app=frontend -n default --force --grace-period=0 || echo "No frontend pods to delete"
-      - kubectl delete pods -l app=backend -n default --force --grace-period=0 || echo "No backend pods to delete"
-      - echo "Waiting for rollouts..."
-      - kubectl rollout status deployment/frontend -n default --timeout=300s || echo "Frontend rollout failed"
-      - kubectl rollout status deployment/backend -n default --timeout=300s || echo "Backend rollout failed"
+      - |
+        FRONTEND_IMAGE=605134461257.dkr.ecr.us-east-1.amazonaws.com/frontend:latest
+        BACKEND_IMAGE=605134461257.dkr.ecr.us-east-1.amazonaws.com/backend:latest
+        echo "Frontend: $FRONTEND_IMAGE"
+        echo "Backend: $BACKEND_IMAGE"
+        echo "=== Starting Simple Deployment ==="
+        echo "Deployment started at $(date)"
+        echo "Checking cluster connectivity..."
+        kubectl get nodes || echo "Warning: Cannot get nodes"
+        echo "Updating frontend deployment..."
+        kubectl set image deployment/frontend frontend=$FRONTEND_IMAGE -n default || echo "Frontend update failed"
+        echo "Updating backend deployment..."
+        kubectl set image deployment/backend backend=$BACKEND_IMAGE -n default || echo "Backend update failed"
+        echo "Forcing fresh image pulls..."
+        kubectl delete pods -l app=frontend -n default --force --grace-period=0 || echo "No frontend pods to delete"
+        kubectl delete pods -l app=backend -n default --force --grace-period=0 || echo "No backend pods to delete"
+        echo "Waiting for rollouts..."
+        kubectl rollout status deployment/frontend -n default --timeout=300s || echo "Frontend rollout failed"
+        kubectl rollout status deployment/backend -n default --timeout=300s || echo "Backend rollout failed"
 
   post_build:
     commands:
