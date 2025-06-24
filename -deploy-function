@@ -1,0 +1,28 @@
+{
+    "Role": {
+        "Path": "/",
+        "RoleName": "eks-deploy-lambda-role",
+        "RoleId": "AROAYZZGTDFEV2XAVLKLC",
+        "Arn": "arn:aws:iam::605134461257:role/eks-deploy-lambda-role",
+        "CreateDate": "2025-06-23T18:06:04+00:00",
+        "AssumeRolePolicyDocument": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "lambda.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                },
+                {
+                    "Effect": "Allow",
+                    "Principal": {
+                        "Service": "codepipeline.amazonaws.com"
+                    },
+                    "Action": "sts:AssumeRole"
+                }
+            ]
+        }
+    }
+}

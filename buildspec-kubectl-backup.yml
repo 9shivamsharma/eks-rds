@@ -39,13 +39,11 @@ phases:
       - echo "=== Starting Terraform Deployment ==="
       - echo "Deployment started at $(date)"
       - echo "Initializing Terraform..."
-      - cd terraform
       - terraform init
       - echo "Planning Terraform deployment..."
       - terraform plan -var="frontend_image=$FRONTEND_IMAGE" -var="backend_image=$BACKEND_IMAGE" -out=tfplan
       - echo "Applying Terraform deployment..."
       - terraform apply -auto-approve tfplan
-      - cd ..
       - echo "Waiting for deployments to be ready..."
       - kubectl rollout status deployment/frontend -n default --timeout=300s || echo "Frontend rollout failed"
       - kubectl rollout status deployment/backend -n default --timeout=300s || echo "Backend rollout failed"
@@ -55,7 +53,7 @@ phases:
       - echo "=== Deployment Summary ==="
       - echo "Deployment completed at $(date)"
       - echo "Terraform state:"
-      - cd terraform && terraform show && cd ..
+      - terraform show
       - echo "Deployments:"
       - kubectl get deployments -n default || echo "Cannot get deployments"
       - echo "Pods:"
